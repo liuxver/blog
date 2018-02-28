@@ -6,7 +6,6 @@ use awesome;
 grant select,insert,update,delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
 
 create table users(
-id varchar(50) not null,
 `id` varchar(50) not null,
 `email` varchar(50) not null,
 `password` varchar(50) not null,
@@ -18,6 +17,9 @@ unique key `idx_email`(`email`),
 key `idx_create_at`(`create_at`),
 primary key(`id`)
 )engine=innodb default charset=utf8;
+
+insert users values('liuxver','1369058574@qq.com','1234',True,'liuxver','a default image',5201314);
+
 
 
 create table blogs(

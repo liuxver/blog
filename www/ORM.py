@@ -183,7 +183,7 @@ class ModelMetaclass(type):
 		for k in mappings.keys():
 			attrs.pop(k)
 
-		escaped_fields=list(map(lambda f:'^%s^'%f,fields))
+		escaped_fields=list(map(lambda f:'`%s`'%f,fields))
 		#保存睡醒和列的映射关系
 		attrs['__mappings__']=mappings
 
@@ -195,7 +195,7 @@ class ModelMetaclass(type):
 		#构造默认的select，insert，update，delete语句：
 		attrs['__select__']='select `%s`,%s from `%s`'%(primaryKey,','.join(escaped_fields),tableName)
 		attrs['__insert__']='insert into `%s` (%s,`%s`)  values (%s)'%(tableName,','.join(escaped_fields),primaryKey,create_args_string(len(escaped_fields)+1))
-		attrs['__update__']='update `%s` set %s where `%s`=?'%(tableName,','.join(map(lambda f:'^%s^=?'%(mappings.get(f).name or f),fields)),primaryKey)
+		attrs['__update__']='update `%s` set %s where `%s`=?'%(tableName,','.join(map(lambda f:'`%s`=?'%(mappings.get(f).name or f),fields)),primaryKey)
 		attrs['__delete__']='delete from `%s` where `%s`=?'%(tableName,primaryKey)
 		return type.__new__(cls,name,bases,attrs)
 
