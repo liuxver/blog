@@ -20,7 +20,11 @@ async def create_pool(loop,**kw):
 		user=kw['user'],
 		password=kw['password'],
 		db=kw['db'],
+<<<<<<< HEAD
 		charset=kw.get('charset','utf-8'),
+=======
+		charset=kw.get('charset','utf8'),
+>>>>>>> dev
 		autocommit=kw.get('autocommit',True),
 		maxsize=kw.get('maxsize',10),
 		minsize=kw.get('minsize',1),
@@ -82,6 +86,7 @@ async def select(sql,args,size=None):
 
 #@asyncio.coroutine
 async def execute(sql,args,autocommit=True):
+
 	log(sql)
 	async with __pool.get() as conn:
 		if not autocommit:
@@ -183,7 +188,10 @@ class ModelMetaclass(type):
 		for k in mappings.keys():
 			attrs.pop(k)
 
-		escaped_fields=list(map(lambda f:'^%s^'%f,fields))
+
+		
+		escaped_fields=list(map(lambda f:'`%s`'%f,fields))
+
 		#保存睡醒和列的映射关系
 		attrs['__mappings__']=mappings
 
@@ -193,10 +201,12 @@ class ModelMetaclass(type):
 		#除了主键外的属性名
 		attrs['__fields__']=fields
 		#构造默认的select，insert，update，delete语句：
-		attrs['__select__']='select ^%s^,%s from ^%s^'%(primaryKey,','.join(escaped_fields),tableName)
-		attrs['__insert__']='insert into ^%s^ (%s,^%s^)  values (%s)'%(tableName,','.join(escaped_fields),primaryKey,create_args_string(len(escaped_fields)+1))
-		attrs['__update__']='update ^%s^ set %s where ^%s^=?'%(tableName,','.join(map(lambda f:'^%s^=?'%(mappings.get(f).name or f),fields)),primaryKey)
-		attrs['__delete__']='delete from ^%s^ where ^%s^=?'%(tableName,primaryKey)
+
+		attrs['__select__']='select `%s`,%s from `%s`'%(primaryKey,','.join(escaped_fields),tableName)
+		attrs['__insert__']='insert into `%s` (%s,`%s`)  values (%s)'%(tableName,','.join(escaped_fields),primaryKey,create_args_string(len(escaped_fields)+1))
+		attrs['__update__']='update `%s` set %s where `%s`=?'%(tableName,','.join(map(lambda f:'`%s`=?'%(mappings.get(f).name or f),fields)),primaryKey)
+		attrs['__delete__']='delete from `%s` where `%s`=?'%(tableName,primaryKey)
+
 		return type.__new__(cls,name,bases,attrs)
 
 
@@ -232,14 +242,18 @@ class Model(dict,metaclass=ModelMetaclass):
 
 	def getValueOrDefault(self,key):
 		value=getattr(self,key,None)
+
 		if value is None:
 			field=self.__mappings__[key]
-			if field.default is None:
+			if field.default is not None:
+
 				value=field.default() if callable(field.default) else field.default
 				logging.debug('using default value for %s:%s '%(key,str(value)))
 				setattr(self,key,value)
 
-			return value
+
+		return value
+
 
 	@classmethod
 	#@asyncio.coroutine
@@ -276,7 +290,9 @@ class Model(dict,metaclass=ModelMetaclass):
 	#@asyncio.coroutine
 	async def findNumber(cls,selectField,where=None,args=None):
 		'find number by select and where .'
-		sql=['select %s _num_ from ^%s^ '%(selectField,cls.__table__)]
+
+		sql=['select %s _num_ from `%s` '%(selectField,cls.__table__)]
+
 		if where:
 			sql.append('where')
 			sql.append(where)
@@ -293,17 +309,23 @@ class Model(dict,metaclass=ModelMetaclass):
 	#@asyncio.coroutine
 	async def find(cls,pk):
 		'find object by primary key. '
-		rs=await select('%s where ^%s^=?'%(cls.__select__,cls.__primary_key__),[pk],1)
+
+		rs=await select('%s where `%s`=?'%(cls.__select__,cls.__primary_key__),[pk],1)
 		if len(rs)==0:
 			return None
-		return clas(**rs[0])
+
 
 	#往Model类添加实例方法，就可以让所有子类调用实例方法：
 	#@asyncio.coroutine
 	async def save(self):
+
+		#print('4444444444444444')
 		args=list(map(self.getValueOrDefault,self.__fields__))
+		print(args)
+		#print('5555555555555555555')
 		args.append(self.getValueOrDefault(self.__primary_key__))
-		rows=await excute(self.__insert__,args)
+		rows=await execute(self.__insert__,args)
+
 		if rows!=1:
 			logging.warn('Failed to insert record:affected rows:%s'%rows)
 
