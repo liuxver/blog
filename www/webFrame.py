@@ -81,7 +81,7 @@ def has_request_arg(fn):
 		if name=='request':
 			found=True
 			continue
-		if found and (param.kind != inspect.Parameter.VAR_POSITIONAL and param.kind!=inspect.Parameter.KWYWORD_ONLY and param.kind!=inspect.Parameter.VAR_KEYWORD):
+		if found and (param.kind != inspect.Parameter.VAR_POSITIONAL and param.kind!=inspect.Parameter.KEYWORD_ONLY and param.kind!=inspect.Parameter.VAR_KEYWORD):
 			raise ValueError('request parameter must be the last named parameter')
 
 	return found
@@ -129,7 +129,7 @@ class RequestHandler(object):
 			if request.method=='POST':
 				if not request.content_type:
 					return web.HTTPBadRequest('Missing Content-Type.')
-				ct=rerquest.content_type.lower()
+				ct=request.content_type.lower()
 				if ct.startswith('application/json'):
 					params=await request.json()
 					if not isinstance(params,dict):

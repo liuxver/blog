@@ -82,6 +82,9 @@ async def select(sql,args,size=None):
 
 #@asyncio.coroutine
 async def execute(sql,args,autocommit=True):
+	#print('11111111111111111111111111111')
+	#print(args)
+	#print('222222222222222222')
 	log(sql)
 	async with __pool.get() as conn:
 		if not autocommit:
@@ -232,14 +235,17 @@ class Model(dict,metaclass=ModelMetaclass):
 
 	def getValueOrDefault(self,key):
 		value=getattr(self,key,None)
+		#print('666666666666666')
+		#print(value)
+		#print('777777777777777777777')
 		if value is None:
 			field=self.__mappings__[key]
-			if field.default is None:
+			if field.default is not None:
 				value=field.default() if callable(field.default) else field.default
 				logging.debug('using default value for %s:%s '%(key,str(value)))
 				setattr(self,key,value)
 
-			return value
+		return value
 
 	@classmethod
 	#@asyncio.coroutine
@@ -296,14 +302,17 @@ class Model(dict,metaclass=ModelMetaclass):
 		rs=await select('%s where `%s`=?'%(cls.__select__,cls.__primary_key__),[pk],1)
 		if len(rs)==0:
 			return None
-		return clas(**rs[0])
+		return cls(**rs[0])
 
 	#往Model类添加实例方法，就可以让所有子类调用实例方法：
 	#@asyncio.coroutine
 	async def save(self):
+		#print('4444444444444444')
 		args=list(map(self.getValueOrDefault,self.__fields__))
+		print(args)
+		#print('5555555555555555555')
 		args.append(self.getValueOrDefault(self.__primary_key__))
-		rows=await excute(self.__insert__,args)
+		rows=await execute(self.__insert__,args)
 		if rows!=1:
 			logging.warn('Failed to insert record:affected rows:%s'%rows)
 
